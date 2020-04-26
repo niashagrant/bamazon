@@ -14,20 +14,18 @@ connection.connect();
 
 function start() {
   //prints the items for sale and their details
-  connection.query("SELECT * FROM Products", function (err, res) {
+  connection.query("SELECT * FROM products", function (err, res) {
     if (err) throw err;
 
     console.log("Welcome to Bamazon!");
     console.log("Discover different products below:");
 
     var table = new Table({
-      //You can name these table heads chicken if you'd like. They are simply the headers for a table we're putting our data in
       head: ["ID", "Products", "Department", "Price", "Quantity"],
-      //These are just the width of the columns. Only mess with these if you want to change the cosmetics of our response
+
       colWidths: [10, 40, 25, 10, 10],
     });
 
-    // table is an Array, so you can `push`, `unshift`, `splice`
     for (var i = 0; i < res.length; i++) {
       table.push([
         res[i].item_id,
@@ -38,7 +36,50 @@ function start() {
       ]);
     }
     console.log(table.toString());
+    shop();
   });
+}
+
+function shop() {
+  inquirer
+    .prompt([
+      {
+        name: "itemId",
+        type: "input",
+        message:
+          "Please enter the Product Id of the item you would like to buy!",
+      },
+      {
+        name: "quantity",
+        type: "input",
+        message: "How many items would you like to buy?",
+      },
+    ])
+    .then(function (choice) {
+      connection.query(
+        "SELECT * FROM products WHERE item_id=?",
+        choice.itemId,
+        function (err, res) {
+          for (var i = 0; i < res.length; i++) {
+            if (choice.quantity > res[i].stock_quantity) {
+              console.log(
+                "Sorry! Not enough in stock. Please try again later."
+              );
+              shop();
+            } else {
+              console.log("You've selected:");
+              console.log("----------------");
+              console.log("Item: " + res[i].product_name);
+              console.log("Department: " + res[i].department_name);
+              console.log("Price: $" + res[i].price);
+              console.log("Quantity: " + choice.quantity);
+              console.log("----------------");
+              console.log("Total: $" + res[i].price * choice.quantity);
+            }
+          }
+        }
+      );
+    });
 }
 
 start();
