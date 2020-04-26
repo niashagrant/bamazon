@@ -11,6 +11,7 @@ stock_quantity int null,
 primary key(item_id)
 );
 
+select * from products;
 
 insert into products (product_name, department_name, price, stock_quantity)
 values ("Borderlands 3", "Video Games", 59.99, 30),
