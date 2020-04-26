@@ -5,12 +5,37 @@ var Table = require("cli-table");
 var connection = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "tactics11!",
+  password: "",
   port: 3306,
   database: "bamazon_db",
 });
 
-connection.connect();
+connection.connect(function (err) {
+  if (err) throw err;
+  openingPrompt();
+});
+
+function openingPrompt() {
+  inquirer
+    .prompt([
+      {
+        type: "confirm",
+        name: "confirm",
+        message:
+          "============== " +
+          "Welcome to Bamazon! Would you like to view our inventory?" +
+          " ==============",
+        default: true,
+      },
+    ])
+    .then(function (user) {
+      if (user.confirm === true) {
+        start();
+      } else {
+        console.log("Thank you! Come back soon!");
+      }
+    });
+}
 
 function start() {
   //prints the items for sale and their details
@@ -67,6 +92,8 @@ function shop() {
               );
               shop();
             } else {
+              console.log("");
+              console.log("=================");
               console.log("You've selected:");
               console.log("----------------");
               console.log("Item: " + res[i].product_name);
@@ -75,6 +102,13 @@ function shop() {
               console.log("Quantity: " + choice.quantity);
               console.log("----------------");
               console.log("Total: $" + res[i].price * choice.quantity);
+
+              console.log("================= \n");
+
+              var updatedStock = res[i].stock_quantity - choice.quantity;
+              var purchasedItem = choice.itemId;
+
+              purchaseConfirmation(updatedStock, purchasedItem);
             }
           }
         }
@@ -82,4 +116,39 @@ function shop() {
     });
 }
 
-start();
+function purchaseConfirmation(updatedStock, purchasedItem) {
+  inquirer
+    .prompt({
+      type: "confirm",
+      name: "confirmPurchase",
+      message:
+        "Are you sure you would like to purchase this item and quantity?",
+      default: true,
+    })
+    .then(function (confirmed) {
+      if (confirmed.confirmPurchase === true) {
+        connection.query(
+          "UPDATE products SET ? WHERE ?",
+          [
+            {
+              stock_quantity: updatedStock,
+            },
+            {
+              item_id: purchasedItem,
+            },
+          ],
+          function (err, res) {}
+        );
+        console.log("");
+        console.log("Transaction completed. Thank you!");
+        console.log("");
+
+        openingPrompt();
+      } else {
+        console.log("");
+        console.log("Hope to see you agagin!");
+        console.log("");
+        openingPrompt();
+      }
+    });
+}
